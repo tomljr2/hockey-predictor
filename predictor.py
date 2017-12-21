@@ -2,27 +2,13 @@ from authentication import *
 from stat_table import *
 import base64
 import requests
+import os
+import time
 
 #If a player has multiple words in their last name, please use their full name
-PLAYER = "Deslauriers"
+PLAYER = ""
 CURRENTYEAR = "2017-2018"
-
-#Function to make a list of all instances of a character so that I can read many different inputs of names
-def find_all(a_str, sub):
-    start = 0
-    while True:
-        start = a_str.find(sub, start)
-        if start == -1: return
-        yield start
-        start += len(sub)
-
-#Convert player into proper form
-PLAYER = PLAYER.strip()
-if len(list(find_all(PLAYER, " "))) == 1:
-    PLAYER = PLAYER.replace(" ", "-")
-elif len(list(find_all(PLAYER, " "))) > 1:
-    PLAYER = PLAYER.replace(" ", "-", 1)
-    PLAYER = PLAYER.replace(" ", "")
+NOW = int(time.time())
 
 #Get the API response for the cumulative stats
 #This allows it to only call the API once per player (Efficiency!)
@@ -35,7 +21,7 @@ def get_response(player, year):
             },
             headers={
                 "Authorization": "Basic " + base64.b64encode('{}:{}'
-                .format(USERNAME,PASSWORD).encode('utf-8')).decode('ascii')
+                .format(MSFUSERNAME,MSFPASSWORD).encode('utf-8')).decode('ascii')
             }
         )
     except requests.exceptions.RequestException:
@@ -280,53 +266,106 @@ def get_removed_outliers_list(deltaList):
             
     return deltaNoOutliers
 
-#Get the JSON data with all of the player stats
-response = get_response(PLAYER, CURRENTYEAR)
+def run():
+    #Get the JSON data with all of the player stats
+    response = get_response(PLAYER, CURRENTYEAR)
 
-#Two arrays that will be populated with the player's expected total
-#and the predicted stats respectively
-predictedStatsList = []
-expectedStatsList = []
-reply = ""
-try:
-    if PLAYER == "" or PLAYER.isnumeric():
-        reply = "Not a player";
+    #Two arrays that will be populated with the player's expected total
+    #and the predicted stats respectively
+    predictedStatsList = []
+    expectedStatsList = []
+    reply = ""
+    try:
+        if PLAYER == "" or PLAYER.isnumeric():
+            reply = "Not a player";
+            reply += "\n\n&nbsp;\n\n&nbsp;\n\n*I am a bot! If you have any issues or find any bugs, contact my creator /u/heavie1!*"
 
-    #If the player is a forward
-    elif get_player_type(response) != "G" and get_player_type(response) != "False":
-        expectedStatsList = get_expected_forward_stats(response)
-        predictedStatsList = get_predicted_forward_stats(response)
-        if expectedStatsList != []:
-            reply = get_player_type(response) + " " + get_player_name(response) + " is on pace to have:\n"
-            reply += "G\tA\tP\tPPP\tSHP\tGWG\tPIM\tS\tH\n"
-            for i in range(0,len(expectedStatsList)):
-                reply += str(expectedStatsList[i])
-                reply += "\t"
-            if expectedStatsList[2] >= predictedStatsList[2] - 5 and expectedStatsList[2] <= predictedStatsList[2] + 5:
-                reply += "\n\nI think he is very close to being on pace with my prediction!\nHere it is:\n"
-            elif expectedStatsList[2] < predictedStatsList[2]:
-                reply += "\n\nHe is underperforming a bit from what I expected.\nHere is my guess for the end of the season:\n"
+        #If the player is a forward
+        elif get_player_type(response) != "G" and get_player_type(response) != "False":
+            expectedStatsList = get_expected_forward_stats(response)
+            predictedStatsList = get_predicted_forward_stats(response)
+            if expectedStatsList != []:
+                reply = get_player_type(response) + " " + get_player_name(response) + " is on pace to have:\n\n"
+                reply += "G|A|P|PPP|SHP|GWG|PIM|S|H\n:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n"
+                for i in range(0,len(expectedStatsList)):
+                    reply += str(expectedStatsList[i])
+                    reply += "|"
+                if expectedStatsList[2] >= predictedStatsList[2] - 5 and expectedStatsList[2] <= predictedStatsList[2] + 5:
+                    reply += "\n\nI think he is very close to being on pace with my prediction!\nHere it is:\n\n"
+                elif expectedStatsList[2] < predictedStatsList[2]:
+                    reply += "\n\nHe is underperforming a bit from what I expected.\nHere is my guess for the end of the season:\n\n"
+                else:
+                    reply += "\n\nHe is doing much better than I expected!\nHere is my guess for the end of the season:\n\n"
+                reply += "G|A|P|PPP|SHP|GWG|PIM|S|H\n:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n"
+                for i in range(0,len(predictedStatsList)):
+                    reply += str(predictedStatsList[i])
+                    reply += "|"
+
+                reply += "\n\n&nbsp;\n\n&nbsp;\n\n*I am a bot! If you have any issues or find any bugs, contact my creator /u/heavie1!*"
+
+        #If the player is a goalie
+        elif get_player_type(response) == "G" and get_player_type(response) != "False":
+            reply = "Sorry, I don't work with goalies right now.\n\nHere are some of G "
+            if get_player_name(response) == "Carey Price":
+                reply += "Jesus Price"
             else:
-                reply += "\n\nHe is doing much better than I expected!\nHere is my guess for the end of the season:\n"
-            reply += "G\tA\tP\tPPP\tSHP\tGWG\tPIM\tS\tH\n"
-            for i in range(0,len(predictedStatsList)):
-                reply += str(predictedStatsList[i])
-                reply += "\t"
+                reply += str(get_player_name(response))
 
-    #If the player is a goalie
-    elif get_player_type(response) == "G" and get_player_type(response) != "False":
-        reply = "Sorry, I don't work with goalies right now.\nHere are some of G "
-        if get_player_name(response) == "Carey Price":
-            reply += "Jesus Price"
+            reply += "'s stats to make up for it:\n\n" + str(get_stats(response,GOALSAGAINST)) + " goals against\n\n"
+            reply += str(get_stats(response, SAVES)) + " saves\n\n" + str(get_stats(response,SAVEPERCENTAGE))
+            reply += " save percentage"
+            reply += "\n\n&nbsp;\n\n&nbsp;\n\n*I am a bot! If you have any issues or find any bugs, contact my creator /u/heavie1!*"
         else:
-            reply += str(get_player_name(response))
+            reply ="Player not found. Please be sure you spelled their name correctly.\n\nOtherwise, I might not have any information on them.\n\nSorry!"
+            reply += "\n\n&nbsp;\n\n&nbsp;\n\n*I am a bot! If you have any issues or find any bugs, contact my creator /u/heavie1!*"
 
-        reply += "'s stats to make up for it:\n\n" + str(get_stats(response,GOALSAGAINST)) + " goals against\n"
-        reply += str(get_stats(response, SAVES)) + " saves\n" + str(get_stats(response,SAVEPERCENTAGE))
-        reply += " save percentage"
-    else:
-        reply ="Player not found. Please be sure you spelled their name correctly.\nOtherwise, I might not have any information on them.\nSorry!"
+        return reply
+    except UnboundLocalError:
+        print("Unable to access API")
 
-    print(reply)
-except UnboundLocalError:
-    print("Unable to access API")
+#Function to make a list of all instances of a character so that I can read many different inputs of names
+def find_all(a_str, sub):
+    start = 0
+    while True:
+        start = a_str.find(sub, start)
+        if start == -1: return
+        yield start
+        start += len(sub)
+
+if not os.path.isfile("comments_replied_to.txt"):
+    comments_replied_to = []
+else:
+    with open("comments_replied_to.txt", "r") as f:
+              comments_replied_to = f.read()
+              comments_replied_to = comments_replied_to.split("\n")
+
+while True:
+    for comment in REDDIT.subreddit("test+habs+hockey").comments(limit=None):
+        commentTime = int(comment.created_utc)
+        if (NOW - commentTime) > 18000:
+            pass
+        else:
+            try:
+                if "!predict-nhl" in comment.body and comment.id not in comments_replied_to and comment.author != REDDIT.user.me():
+                    commentFetch = comment.body.replace("!predict-nhl ", "")
+                    PLAYER = commentFetch
+                    
+                    #Convert player into proper form
+                    PLAYER = PLAYER.strip()
+                    if len(list(find_all(PLAYER, " "))) == 1:
+                        PLAYER = PLAYER.replace(" ", "-")
+                    elif len(list(find_all(PLAYER, " "))) > 1:
+                        PLAYER = PLAYER.replace(" ", "-", 1)
+                        PLAYER = PLAYER.replace(" ", "")
+
+                    comment.reply(run())
+
+                    comments_replied_to.append(comment.id)
+                    with open ("comments_replied_to.txt", "a") as f:
+                        f.write(comment.id + "\n")
+
+                    print("Successfully replied!")
+            except praw.exceptions.APIException:
+                print("We stuck")
+                time.sleep(60)
+    time.sleep(10)

@@ -10,6 +10,7 @@ PLUSMINUS = "PlusMinus"
 SHOTS = "Shots"
 SHOTPERCENTAGE = "ShotPercentage"
 HITS = "Hits"
+GAMESPLAYED = "GamesPlayed"
 
 #Common goalie stats
 WINS = "Wins"

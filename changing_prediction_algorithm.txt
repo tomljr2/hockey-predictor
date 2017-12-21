@@ -1,0 +1,24 @@
+20 30 50
+10 20 30
+
+GP = 10
+
+		Goals	Assists
+Prediction		20 	30
+On pace (Expected)	10 	20
+
+GoalsP((GP-82)/82) + GoalsE(GP/82)
+GoalsP = Predicted goals
+GoalsE = Expected goals
+
+20(72/82) + 10(10/82)		Prediction after 10
+17.561 + 1.219 = 18.78	games for goals
+
+30(72/82) + 20(10/82)		Prediction after 10
+26.341 + 2.439 = 28.78	games for assists
+
+20(32/82) + 10(50/82)		Prediction after 50
+7.805 + 6.098 = 13.903	games for goals
+
+20(0/82) + 10(82/82)		Prediction after 82
+0 + 10 = 10		games for goals

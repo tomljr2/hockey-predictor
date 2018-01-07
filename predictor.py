@@ -319,6 +319,7 @@ def run():
             reply ="Player not found. Please be sure you spelled their name correctly.\n\nOtherwise, I might not have any information on them.\n\nSorry!"
             reply += "\n\n&nbsp;\n\n&nbsp;\n\n*I am a bot! If you have any issues or find any bugs, contact my creator /u/heavie1!*"
 
+
         return reply
     except UnboundLocalError:
         print("Unable to access API")
@@ -347,7 +348,7 @@ while True:
         else:
             try:
                 if "!predict-nhl" in comment.body and comment.id not in comments_replied_to and comment.author != REDDIT.user.me():
-                    commentFetch = comment.body.replace("!predict-nhl ", "")
+                    commentFetch = comment.body.split("!predict-nhl ", 1)[-1]
                     PLAYER = commentFetch
                     
                     #Convert player into proper form
@@ -357,7 +358,7 @@ while True:
                     elif len(list(find_all(PLAYER, " "))) > 1:
                         PLAYER = PLAYER.replace(" ", "-", 1)
                         PLAYER = PLAYER.replace(" ", "")
-
+                        
                     comment.reply(run())
 
                     comments_replied_to.append(comment.id)
